@@ -26,33 +26,30 @@ bucket = client.bucket(bucket_name)
 
 
 # Descargar archivos
-def download_files():
-    print("Downloading files...")
-    # 1. Aircrafts.xml
-    blob = bucket.get_blob('aircrafts.xml')
-    global aircrafts_data
-    aircrafts_data = blob.download_as_string().decode('utf-8')
-    print("Aircrafts downloaded...")
-    # 2. Airports.csv
-    blob = bucket.get_blob('airports.csv')
-    global airports_data
-    airports_data = blob.download_as_string().decode('utf-8').split('\n')
-    print("Airports downloaded...")
-    # 3. Flight Detail
-    # 5. Tickets.csv
-    blob = bucket.get_blob('tickets.csv')
-    global tickets_data
-    tickets_data = blob.download_as_string().decode('utf-8').split('\n')
-    print("Tickets downloaded...")
-    # 4. Passengers.yaml
-    blob = bucket.get_blob('passengers.yaml')
-    file_content = blob.download_as_text()
-    global passengers_data
-    passengers_data = yaml.safe_load(file_content)
-    print("Passengers downloaded...")
-    print("All files downloaded! :)")
-
-download_files()
+print("Downloading files...")
+# 1. Aircrafts.xml
+blob = bucket.get_blob('aircrafts.xml')
+global aircrafts_data
+aircrafts_data = blob.download_as_string().decode('utf-8')
+print("Aircrafts downloaded...")
+# 2. Airports.csv
+blob = bucket.get_blob('airports.csv')
+global airports_data
+airports_data = blob.download_as_string().decode('utf-8').split('\n')
+print("Airports downloaded...")
+# 3. Flight Detail
+# 5. Tickets.csv
+blob = bucket.get_blob('tickets.csv')
+global tickets_data
+tickets_data = blob.download_as_string().decode('utf-8').split('\n')
+print("Tickets downloaded...")
+# 4. Passengers.yaml
+blob = bucket.get_blob('passengers.yaml')
+file_content = blob.download_as_text()
+global passengers_data
+passengers_data = yaml.safe_load(file_content)
+print("Passengers downloaded...")
+print("All files downloaded! :)")
 
 @app.get("/")
 def read_root():
