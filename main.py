@@ -24,6 +24,36 @@ bucket_name = '2023-2-tarea3'
 client = storage.Client.from_service_account_json('tarea3-service-key.json')
 bucket = client.bucket(bucket_name)
 
+
+# Descargar archivos
+def download_files():
+    print("Downloading files...")
+    # 1. Aircrafts.xml
+    blob = bucket.get_blob('aircrafts.xml')
+    global aircrafts_data
+    aircrafts_data = blob.download_as_string().decode('utf-8')
+    print("Aircrafts downloaded...")
+    # 2. Airports.csv
+    blob = bucket.get_blob('airports.csv')
+    global airports_data
+    airports_data = blob.download_as_string().decode('utf-8').split('\n')
+    print("Airports downloaded...")
+    # 3. Flight Detail
+    # 5. Tickets.csv
+    blob = bucket.get_blob('tickets.csv')
+    global tickets_data
+    tickets_data = blob.download_as_string().decode('utf-8').split('\n')
+    print("Tickets downloaded...")
+    # 4. Passengers.yaml
+    blob = bucket.get_blob('passengers.yaml')
+    file_content = blob.download_as_text()
+    global passengers_data
+    passengers_data = yaml.safe_load(file_content)
+    print("Passengers downloaded...")
+    print("All files downloaded! :)")
+
+download_files()
+
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
@@ -47,9 +77,6 @@ async def list_files():
 @app.get("/files/aircrafts")
 async def get_aircrafts():
     try:
-        blob = bucket.get_blob('aircrafts.xml')
-        aircrafts_data = blob.download_as_string().decode('utf-8')
-
         # Parse XML
         root = ET.fromstring(aircrafts_data)
         aircraft_list = []
@@ -72,9 +99,6 @@ async def get_aircrafts():
 @app.get("/files/aircrafts/{aircraft_id}")
 async def get_aircraft(aircraft_id: str):
     try:
-        blob = bucket.get_blob('aircrafts.xml')
-        aircrafts_data = blob.download_as_string().decode('utf-8')
-
         # Parse XML
         root = ET.fromstring(aircrafts_data)
         aircraft_list = []
@@ -107,9 +131,6 @@ async def get_aircraft(aircraft_id: str):
 @app.get("/files/airports")
 async def get_airports():
     try:
-        blob = bucket.get_blob('airports.csv')
-        airports_data = blob.download_as_string().decode('utf-8').split('\n')
-
         # Extract headers and airport data
         headers = airports_data[0].split(',')
         airport_data = [line.split(',') for line in airports_data[1:] if line]
@@ -133,9 +154,6 @@ async def get_airports():
 @app.get("/files/airports/{iata}")
 async def get_airport(iata: str):
     try:
-        blob = bucket.get_blob('airports.csv')
-        airports_data = blob.download_as_string().decode('utf-8').split('\n')
-
         # Extract headers and airport data
         headers = airports_data[0].split(',')
         airport_data = [line.split(',') for line in airports_data[1:] if line]
@@ -215,23 +233,6 @@ async def get_flight_data(year: int, month: int):
 @app.get("/files/passengers/")
 async def get_passengers():
     try:
-        # Specify the path to the passengers.yaml file
-        file_path = 'passengers.yaml'
-        blob = bucket.get_blob(file_path)
-
-        # Check if the file exists
-        if blob is None:
-            raise HTTPException(status_code=404, detail="Passenger data not found")
-
-        # Download and parse YAML data
-        file_content = blob.download_as_text()
-
-        # Check if the file is empty
-        if not file_content:
-            raise HTTPException(status_code=404, detail="Passenger data is empty")
-
-        passengers_data = yaml.safe_load(file_content)
-
         return {"passengers": passengers_data}
 
     except NotFound:
@@ -243,46 +244,69 @@ async def get_passengers():
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# 4.1 Get Passengers from a flight
+@app.get("/files/passengers/{flight_number}")
+async def get_passengers_by_flight(flight_number: str):
+    try:
+        # Extract headers
+        headers = tickets_data[0].split(',')
+        ticket_data = [line.split(',') for line in tickets_data[1:] if line]
     
+        # Organize data by attributes
+        ticket_list = []
+        for entry in ticket_data:
+            ticket_dict = {headers[i]: entry[i] for i in range(len(headers))}
+            if ticket_dict["flightNumber"] == flight_number:
+                ticket_list.append(ticket_dict)
+        
+        for passenger in passengers_data["passengers"]:
+            print(passenger)
+            for ticket in ticket_list:
+                if passenger["passengerID"] == ticket["passengerID"]:
+                    ticket["firstName"] = passenger["firstName"]
+                    ticket["lastName"] = passenger["lastName"]
+                    ticket["birthDate"] = passenger["birthDate"]
+                    ticket["gender"] = passenger["gender"]
+                    ticket["height(cm)"] = passenger["height(cm)"]
+                    ticket["weight(kg)"] = passenger["weight(kg)"]
+                    ticket["avatar"] = passenger["avatar"]
+
+
+        return {"passengers in flight": ticket_list}
+    
+    except NotFound:
+        raise HTTPException(status_code=404, detail="Ticket data not found")
+
+    except HTTPException as e:
+        raise
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 
 # 5. Tickets.csv
 @app.get("/files/tickets/")
 async def get_tickets():
     try:
-        # Specify the path to the tickets.csv file
-        file_path = 'tickets.csv'
-        blob = bucket.get_blob(file_path)
-
-        # Check if the file exists
-        if blob is None:
-            raise HTTPException(status_code=404, detail="Ticket data not found")
-
-        # Download and parse CSV data
-        file_content = blob.download_as_text()
-
-        # Check if the file is empty
-        if not file_content:
-            raise HTTPException(status_code=404, detail="Ticket data is empty")
-
-        tickets_data = []
-        csv_reader = csv.reader(file_content.splitlines())
-        header = next(csv_reader)  # Assuming the first row is the header
-
-        for row in csv_reader:
-            ticket_dict = dict(zip(header, row))
-            tickets_data.append(ticket_dict)
-
-        return {"tickets": tickets_data}
-
+        # Extract headers
+        headers = tickets_data[0].split(',')
+        ticket_data = [line.split(',') for line in tickets_data[1:] if line]
+    
+        # Organize data by attributes
+        ticket_list = []
+        for entry in ticket_data:
+            ticket_dict = {headers[i]: entry[i] for i in range(len(headers))}
+            ticket_list.append(ticket_dict)
+        
+        return {"tickets": ticket_list}
+    
     except NotFound:
-        raise HTTPException(status_code=404, detail="Ticket data not found")
-
-    except HTTPException as e:
-        # Re-raise HTTPException to pass through custom exceptions
-        raise
-
+        raise HTTPException(status_code=404, detail="File not found")
+    
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
 
 # I. VISTA PRINCIPAL
