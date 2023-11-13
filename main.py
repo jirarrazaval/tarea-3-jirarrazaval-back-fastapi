@@ -3,6 +3,8 @@ from google.cloud import storage
 from google.cloud.exceptions import NotFound
 import xml.etree.ElementTree as ET
 import json
+import yaml
+import csv
 
 app = FastAPI()
 
@@ -118,6 +120,80 @@ async def get_flight_data(year: int, month: int):
 
     except NotFound:
         raise HTTPException(status_code=404, detail="Flight data not found")
+
+    except HTTPException as e:
+        # Re-raise HTTPException to pass through custom exceptions
+        raise
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# 4. Passegners.yaml
+@app.get("/files/passengers/")
+async def get_passengers():
+    try:
+        # Specify the path to the passengers.yaml file
+        file_path = 'passengers.yaml'
+        blob = bucket.get_blob(file_path)
+
+        # Check if the file exists
+        if blob is None:
+            raise HTTPException(status_code=404, detail="Passenger data not found")
+
+        # Download and parse YAML data
+        file_content = blob.download_as_text()
+
+        # Check if the file is empty
+        if not file_content:
+            raise HTTPException(status_code=404, detail="Passenger data is empty")
+
+        passengers_data = yaml.safe_load(file_content)
+
+        return {"passengers": passengers_data}
+
+    except NotFound:
+        raise HTTPException(status_code=404, detail="Passenger data not found")
+
+    except HTTPException as e:
+        # Re-raise HTTPException to pass through custom exceptions
+        raise
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
+# 5. Tickets.csv
+@app.get("/files/tickets/")
+async def get_tickets():
+    try:
+        # Specify the path to the tickets.csv file
+        file_path = 'tickets.csv'
+        blob = bucket.get_blob(file_path)
+
+        # Check if the file exists
+        if blob is None:
+            raise HTTPException(status_code=404, detail="Ticket data not found")
+
+        # Download and parse CSV data
+        file_content = blob.download_as_text()
+
+        # Check if the file is empty
+        if not file_content:
+            raise HTTPException(status_code=404, detail="Ticket data is empty")
+
+        tickets_data = []
+        csv_reader = csv.reader(file_content.splitlines())
+        header = next(csv_reader)  # Assuming the first row is the header
+
+        for row in csv_reader:
+            ticket_dict = dict(zip(header, row))
+            tickets_data.append(ticket_dict)
+
+        return {"tickets": tickets_data}
+
+    except NotFound:
+        raise HTTPException(status_code=404, detail="Ticket data not found")
 
     except HTTPException as e:
         # Re-raise HTTPException to pass through custom exceptions
