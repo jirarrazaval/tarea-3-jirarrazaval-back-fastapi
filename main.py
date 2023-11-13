@@ -1,10 +1,11 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from google.cloud import storage
 from google.cloud.exceptions import NotFound
 import xml.etree.ElementTree as ET
 import json
 import yaml
 import csv
+from typing import List
 
 app = FastAPI()
 
@@ -201,3 +202,6 @@ async def get_tickets():
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+# I. VISTA PRINCIPAL
