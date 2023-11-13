@@ -66,7 +66,42 @@ async def get_aircrafts():
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
+
+
+# 1.1. Get specific aircraft
+@app.get("/files/aircrafts/{aircraft_id}")
+async def get_aircraft(aircraft_id: str):
+    try:
+        blob = bucket.get_blob('aircrafts.xml')
+        aircrafts_data = blob.download_as_string().decode('utf-8')
+
+        # Parse XML
+        root = ET.fromstring(aircrafts_data)
+        aircraft_list = []
+        for aircraft in root:
+            aircraft_dict = {}
+            for attribute in aircraft:
+                aircraft_dict[attribute.tag] = attribute.text
+            aircraft_list.append(aircraft_dict)
+
+        # Find aircraft with the specified ID
+        for aircraft in aircraft_list:
+            if aircraft["aircraftID"] == aircraft_id:
+                return aircraft
+
+        # If the aircraft was not found
+        raise HTTPException(status_code=404, detail="Aircraft not found")
+
+    except NotFound:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    except HTTPException as e:
+        # Re-raise HTTPException to pass through custom exceptions
+        raise
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
     
 # 2. Airports.csv
 @app.get("/files/airports")
