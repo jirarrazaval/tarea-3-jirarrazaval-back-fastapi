@@ -92,6 +92,42 @@ async def get_airports():
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+# 2.1. Get specific airport
+@app.get("/files/airports/{iata}")
+async def get_airport(iata: str):
+    try:
+        blob = bucket.get_blob('airports.csv')
+        airports_data = blob.download_as_string().decode('utf-8').split('\n')
+
+        # Extract headers and airport data
+        headers = airports_data[0].split(',')
+        airport_data = [line.split(',') for line in airports_data[1:] if line]
+
+        # Organize data by attributes
+        airport_list = []
+        for entry in airport_data:
+            airport_dict = {headers[i]: entry[i] for i in range(len(headers))}
+            airport_list.append(airport_dict)
+
+        # Find airport with the specified IATA code
+        for airport in airport_list:
+            if airport["airportIATA"].lower() == iata.lower():
+                return airport
+
+        # If the airport was not found
+        raise HTTPException(status_code=404, detail="Airport not found")
+
+    except NotFound:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    except HTTPException as e:
+        # Re-raise HTTPException to pass through custom exceptions
+        raise
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # 3. Flight Detail
