@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, Query
 from google.cloud import storage
 from google.cloud.exceptions import NotFound
+from fastapi.middleware.cors import CORSMiddleware
 import xml.etree.ElementTree as ET
 import json
 import yaml
@@ -8,6 +9,15 @@ import csv
 from typing import List
 
 app = FastAPI()
+
+# Configurar middleware CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Me conecto al bucket de Google Cloud Storage
 bucket_name = '2023-2-tarea3'
