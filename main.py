@@ -244,20 +244,20 @@ async def get_passengers_by_flight(flight_number: str):
             if ticket_dict["flightNumber"] == flight_number:
                 ticket_list.append(ticket_dict)
         
-        blob = bucket.get_blob('passengers.yaml')
-        file_content = blob.download_as_text()
-        passengers_data = yaml.safe_load(file_content)
-        for passenger in passengers_data["passengers"]:
-            print(passenger)
-            for ticket in ticket_list:
-                if passenger["passengerID"] == ticket["passengerID"]:
-                    ticket["firstName"] = passenger["firstName"]
-                    ticket["lastName"] = passenger["lastName"]
-                    ticket["birthDate"] = passenger["birthDate"]
-                    ticket["gender"] = passenger["gender"]
-                    ticket["height(cm)"] = passenger["height(cm)"]
-                    ticket["weight(kg)"] = passenger["weight(kg)"]
-                    ticket["avatar"] = passenger["avatar"]
+        # blob = bucket.get_blob('passengers.yaml')
+        # file_content = blob.download_as_text()
+        # passengers_data = yaml.safe_load(file_content)
+        # for passenger in passengers_data["passengers"]:
+        #     print(passenger)
+        #     for ticket in ticket_list:
+        #         if passenger["passengerID"] == ticket["passengerID"]:
+        #             ticket["firstName"] = passenger["firstName"]
+        #             ticket["lastName"] = passenger["lastName"]
+        #             ticket["birthDate"] = passenger["birthDate"]
+        #             ticket["gender"] = passenger["gender"]
+        #             ticket["height(cm)"] = passenger["height(cm)"]
+        #             ticket["weight(kg)"] = passenger["weight(kg)"]
+        #             ticket["avatar"] = passenger["avatar"]
 
 
         return {"passengers in flight": ticket_list}
@@ -270,7 +270,6 @@ async def get_passengers_by_flight(flight_number: str):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 
 # 5. Tickets.csv
