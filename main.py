@@ -24,29 +24,6 @@ bucket_name = '2023-2-tarea3'
 client = storage.Client.from_service_account_json('tarea3-service-key.json')
 bucket = client.bucket(bucket_name)
 
-
-# Descargar archivos
-print("Downloading files...")
-# 1. Aircrafts.xml
-blob = bucket.get_blob('aircrafts.xml')
-aircrafts_data = blob.download_as_string().decode('utf-8')
-print("Aircrafts downloaded...")
-# 2. Airports.csv
-blob = bucket.get_blob('airports.csv')
-airports_data = blob.download_as_string().decode('utf-8').split('\n')
-print("Airports downloaded...")
-# 3. Flight Detail
-# 5. Tickets.csv
-blob = bucket.get_blob('tickets.csv')
-tickets_data = blob.download_as_string().decode('utf-8').split('\n')
-print("Tickets downloaded...")
-# 4. Passengers.yaml
-blob = bucket.get_blob('passengers.yaml')
-file_content = blob.download_as_text()
-passengers_data = yaml.safe_load(file_content)
-print("Passengers downloaded...")
-print("All files downloaded! :)")
-
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
@@ -70,6 +47,8 @@ async def list_files():
 @app.get("/files/aircrafts")
 async def get_aircrafts():
     try:
+        blob = bucket.get_blob('aircrafts.xml')
+        aircrafts_data = blob.download_as_string().decode('utf-8')
         # Parse XML
         root = ET.fromstring(aircrafts_data)
         aircraft_list = []
@@ -92,6 +71,8 @@ async def get_aircrafts():
 @app.get("/files/aircrafts/{aircraft_id}")
 async def get_aircraft(aircraft_id: str):
     try:
+        blob = bucket.get_blob('aircrafts.xml')
+        aircrafts_data = blob.download_as_string().decode('utf-8')
         # Parse XML
         root = ET.fromstring(aircrafts_data)
         aircraft_list = []
@@ -124,6 +105,8 @@ async def get_aircraft(aircraft_id: str):
 @app.get("/files/airports")
 async def get_airports():
     try:
+        blob = bucket.get_blob('airports.csv')
+        airports_data = blob.download_as_string().decode('utf-8').split('\n')
         # Extract headers and airport data
         headers = airports_data[0].split(',')
         airport_data = [line.split(',') for line in airports_data[1:] if line]
@@ -147,6 +130,8 @@ async def get_airports():
 @app.get("/files/airports/{iata}")
 async def get_airport(iata: str):
     try:
+        blob = bucket.get_blob('airports.csv')
+        airports_data = blob.download_as_string().decode('utf-8').split('\n')
         # Extract headers and airport data
         headers = airports_data[0].split(',')
         airport_data = [line.split(',') for line in airports_data[1:] if line]
@@ -226,6 +211,9 @@ async def get_flight_data(year: int, month: int):
 @app.get("/files/passengers/")
 async def get_passengers():
     try:
+        blob = bucket.get_blob('passengers.yaml')
+        file_content = blob.download_as_text()
+        passengers_data = yaml.safe_load(file_content)
         return {"passengers": passengers_data}
 
     except NotFound:
@@ -243,6 +231,8 @@ async def get_passengers():
 @app.get("/files/passengers/{flight_number}")
 async def get_passengers_by_flight(flight_number: str):
     try:
+        blob = bucket.get_blob('tickets.csv')
+        tickets_data = blob.download_as_string().decode('utf-8').split('\n')
         # Extract headers
         headers = tickets_data[0].split(',')
         ticket_data = [line.split(',') for line in tickets_data[1:] if line]
@@ -254,6 +244,9 @@ async def get_passengers_by_flight(flight_number: str):
             if ticket_dict["flightNumber"] == flight_number:
                 ticket_list.append(ticket_dict)
         
+        blob = bucket.get_blob('passengers.yaml')
+        file_content = blob.download_as_text()
+        passengers_data = yaml.safe_load(file_content)
         for passenger in passengers_data["passengers"]:
             print(passenger)
             for ticket in ticket_list:
@@ -284,6 +277,8 @@ async def get_passengers_by_flight(flight_number: str):
 @app.get("/files/tickets/")
 async def get_tickets():
     try:
+        blob = bucket.get_blob('tickets.csv')
+        tickets_data = blob.download_as_string().decode('utf-8').split('\n')
         # Extract headers
         headers = tickets_data[0].split(',')
         ticket_data = [line.split(',') for line in tickets_data[1:] if line]
